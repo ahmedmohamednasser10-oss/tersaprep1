@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدرسة ترسا الرسمية لغات - Prep 1/A</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#eef2ff;min-height:100vh}
+.header{background:#0d47a1;color:white;padding:22px;text-align:center;border-radius:0 0 24px 24px}
+.header h1{font-size:20px} .header p{font-size:14px;opacity:.9;margin-top:4px}
+.login-box{margin:30px 16px;background:white;padding:26px;border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,.08)}
+.input{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1.5px solid #ddd;outline:none;font-size:14px}
+.btn{width:100%;padding:12px;background:#0d47a1;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer;margin-top:10px}
+.profile-bar{background:white;margin:14px;padding:12px 16px;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
+.tag{padding:4px 10px;border-radius:20px;font-size:11px;color:white}
+.admin{background:#d50000}.teacher{background:#00b248}.student{background:#2962ff}
+.card{background:white;padding:14px 8px;border-radius:14px;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.05);cursor:pointer;flex:1;margin:4px;font-size:12px;font-weight:bold}
+.box{margin:12px;background:white;padding:16px;border-radius:14px;display:none}
+.item{padding:9px 0;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+.del-btn{background:#ff4d4d;color:white;border:none;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px}
+.schedule-img{max-width:100%;border-radius:12px;margin-top:10px;box-shadow:0 4px 10px rgba(0,0,0,.1)}
+
+/* Chat UI Styles */
+.chat-container{height:280px;overflow-y:auto;border:1px solid #eee;border-radius:10px;padding:10px;background:#f9fafe;display:flex;flex-direction:column;gap:8px}
+.msg-bubble{padding:8px 12px;border-radius:12px;background:white;box-shadow:0 2px 5px rgba(0,0,0,.04);max-width:85%;width:fit-content}
+.msg-meta{font-size:10px;color:#777;margin-bottom:2px}
+.msg-text{font-size:13px;word-break:break-word}
+.chat-tab{padding:8px 12px;border:none;border-radius:8px;background:#eee;cursor:pointer;font-weight:bold;font-size:12px}
+.chat-tab.active{background:#0d47a1;color:white}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>مدرسة ترسا الرسمية لغات</h1>
+  <p>فصل Prep 1/A - متابعة الفصل والمجتمع</p>
+  <p id="welcomeText" style="margin-top:8px;font-weight:bold"></p>
+</div>
+
+<div id="loginDiv" class="login-box">
+  <h3 style="text-align:center;color:#0d47a1;margin-bottom:8px">تسجيل الدخول - Prep 1/A</h3>
+  <select id="roleInput" class="input">
+    <option value="student">طالب</option>
+    <option value="teacher">مدرس</option>
+    <option value="admin">ادمن</option>
+  </select>
+  <input id="nameInput" class="input" placeholder="اسمك">
+  <input id="passInput" class="input" type="password" placeholder="كلمة السر (للمدرس والادمن)">
+  <div id="teacherExtra" style="display:none">
+    <input id="subjectInput" class="input" placeholder="المادة (مثال: Math - Science - English)">
+  </div>
+  <button class="btn" onclick="login()">دخول</button>
+</div>
+
+<div id="appDiv" style="display:none">
+  <div class="profile-bar">
+    <div><b id="pName"></b> <span id="pRole" class="tag"></span> <span id="pSubject" style="font-size:12px;color:#555"></span></div>
+    <button onclick="logout()" style="background:#eee;border:none;padding:6px 12px;border-radius:8px;cursor:pointer">خروج</button>
+  </div>
+
+  <div style="display:flex;padding:4px">
+    <div class="card" onclick="openBox('scheduleBox')">📅<br>الجدول</div>
+    <div class="card" onclick="openBox('hwBox')">📚<br>الواجب</div>
+    <div class="card" onclick="openBox('topBox')">⭐<br>الطلاب</div>
+    <div class="card" onclick="openBox('communityBox')">💬<br>المجتمع</div>
+  </div>
+
+  <div id="scheduleBox" class="box">
+    <h3>جدول الحصص الاسبوعي - Prep 1/A</h3>
+    <div id="scheduleContainer" style="margin-top:10px;text-align:center">
+      <div id="scheduleView" style="white-space:pre-wrap;background:#f5f7ff;padding:12px;border-radius:10px;line-height:1.8">جاري التحميل...</div>
+      <img id="scheduleImgView" class="schedule-img" style="display:none" alt="صورة الجدول">
+    </div>
+    <div id="canEditSchedule" style="display:none;margin-top:15px;border-top:1px solid #eee;padding-top:10px">
+      <label style="font-size:13px;font-weight:bold;color:#333">اكتب الجدول أو ارفع صورة من الموبايل:</label>
+      <textarea id="scheduleInput" class="input" style="height:80px" placeholder="اكتب نص الجدول..."></textarea>
+      <input type="file" id="imgInput" accept="image/*" class="input">
+      <button class="btn" onclick="saveSchedule()">حفظ الجدول</button>
+    </div>
+  </div>
+
+  <div id="hwBox" class="box">
+    <h3>الواجبات - Prep 1/A</h3>
+    <div id="hwList" style="margin-top:8px">جاري التحميل...</div>
+    <div id="canEditHW" style="display:none">
+      <input id="hwInput" class="input" placeholder="اكتب واجب جديد">
+      <button class="btn" onclick="addHW()">اضافة واجب</button>
+    </div>
+  </div>
+
+  <div id="topBox" class="box">
+    <h3>اشطر الطلاب - Prep 1/A</h3>
+    <div id="topList" style="margin-top:8px">جاري التحميل...</div>
+    <div id="canEditTop" style="display:none">
+      <input id="topInput" class="input" placeholder="اسم الطالب الشاطر">
+      <button class="btn" style="background:#00b248" onclick="addTop()">اضافة</button>
+    </div>
+  </div>
+
+  <div id="communityBox" class="box">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button id="btnGen" class="chat-tab active" onclick="switchChat('general')">💬 شات الفصل</button>
+      <button id="btnAnn" class="chat-tab" onclick="switchChat('announcements')">📢 إعلانات المدرسين</button>
+    </div>
+
+    <div id="chatMessages" class="chat-container">جاري التحميل...</div>
+
+    <div id="chatInputDiv" style="margin-top:10px;display:flex;gap:6px">
+      <input id="msgInput" class="input" style="margin:0" placeholder="اكتب رسالة... (@everyone للتنبيه)">
+      <button class="btn" style="width:70px;margin:0" onclick="sendMsg()">إرسال</button>
+    </div>
+    <p id="readonlyNote" style="display:none;color:#888;font-size:12px;margin-top:8px;text-align:center">🔒 هذه القناة مخصصة للإعلانات فقط.</p>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDUvW5frD_faC5CODx7jBBAvlgVmT3kroM",
+    authDomain: "tersacomenity.firebaseapp.com",
+    databaseURL: "https://tersacomenity-default-rtdb.firebaseio.com",
+    projectId: "tersacomenity",
+    storageBucket: "tersacomenity.firebasestorage.app",
+    messagingSenderId: "812845635964",
+    appId: "1:812845635964:web:fbb066641b95a2dcf5ecf9",
+    measurementId: "G-PMHBCTCZ4M"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const PASS = {admin: "911031", teacher: "Mm911031"};
+  let currentUser = null;
+  let activeChat = 'general';
+
+  document.getElementById('roleInput').addEventListener('change', function(){
+    document.getElementById('teacherExtra').style.display = this.value === 'teacher' ? 'block' : 'none';
+  });
+
+  window.login = function() {
+    let role = document.getElementById('roleInput').value;
+    let name = document.getElementById('nameInput').value.trim();
+    let pass = document.getElementById('passInput').value;
+    let subject = document.getElementById('subjectInput').value.trim();
+
+    if(!name) return alert('يرجى كتابة الاسم');
+    if(role === 'admin' && pass !== PASS.admin) return alert('كلمة سر الأدمن غير صحيحة');
+    if(role === 'teacher' && pass !== PASS.teacher) return alert('كلمة سر المدرس غير صحيحة');
+    if(role === 'teacher' && !subject) return alert('يرجى تحديد المادة الدراسية');
+
+    currentUser = {name, role, subject: subject || ''};
+    localStorage.setItem('tersa_final_user', JSON.stringify(currentUser));
+    showApp();
+  };
+
+  function showApp() {
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('appDiv').style.display = 'block';
+    document.getElementById('pName').innerText = currentUser.name;
+
+    let roleEl = document.getElementById('pRole');
+    roleEl.innerText = currentUser.role === 'admin' ? 'ادمن' : currentUser.role === 'teacher' ? 'مدرس' : 'طالب';
+    roleEl.className = 'tag ' + currentUser.role;
+    document.getElementById('pSubject').innerText = currentUser.subject ? ' - ' + currentUser.subject : '';
+    document.getElementById('welcomeText').innerText = 'أهلاً بك ' + currentUser.name;
+
+    let canSchedule = currentUser.role === 'admin' || currentUser.role === 'teacher';
+    document.getElementById('canEditSchedule').style.display = canSchedule ? 'block' : 'none';
+    document.getElementById('canEditHW').style.display = currentUser.role === 'teacher' ? 'block' : 'none';
+    document.getElementById('canEditTop').style.display = currentUser.role === 'teacher' ? 'block' : 'none';
+
+    listenToData();
+    openBox('scheduleBox');
+  }
+
+  window.logout = function() {
+    localStorage.removeItem('tersa_final_user');
+    location.reload();
+  };
+
+  window.openBox = function(id) {
+    document.querySelectorAll('.box').forEach(b => { if(b.id !== id) b.style.display = 'none'; });
+    let e = document.getElementById(id);
+    e.style.display = e.style.display === 'block' ? 'none' : 'block';
+    if(id === 'communityBox') updateChatUI();
+  };
+
+  function compressImage(file, callback) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+      let img = new Image();
+      img.onload = function() {
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+        let maxWidth = 800;
+        let scale = maxWidth / img.width;
+        canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+        canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.saveSchedule = function() {
+    let text = document.getElementById('scheduleInput').value.trim();
+    let fileInput = document.getElementById('imgInput');
+
+    if (fileInput.files && fileInput.files[0]) {
+      compressImage(fileInput.files[0], function(compressedBase64) {
+        set(ref(db, 'scheduleData'), { text: text, image: compressedBase64 }).then(() => alert('تم حفظ الجدول والصورة بنجاح!'));
+      });
+    } else {
+      set(ref(db, 'scheduleData'), { text: text, image: '' }).then(() => alert('تم حفظ الجدول بنجاح!'));
+    }
+  };
+
+  window.addHW = function() {
+    let v = document.getElementById('hwInput').value.trim();
+    if(!v) return;
+    push(ref(db, 'homeworks'), { text: v, by: currentUser.name, sub: currentUser.subject }).then(() => {
+      document.getElementById('hwInput').value = '';
+    });
+  };
+
+  window.deleteHW = function(key) { remove(ref(db, 'homeworks/' + key)); };
+
+  window.addTop = function() {
+    let v = document.getElementById('topInput').value.trim();
+    if(!v) return;
+    push(ref(db, 'topStudents'), { name: v }).then(() => {
+      document.getElementById('topInput').value = '';
+    });
+  };
+
+  window.deleteTop = function(key) { remove(ref(db, 'topStudents/' + key)); };
+
+  window.switchChat = function(type) {
+    activeChat = type;
+    document.getElementById('btnGen').className = 'chat-tab ' + (type === 'general' ? 'active' : '');
+    document.getElementById('btnAnn').className = 'chat-tab ' + (type === 'announcements' ? 'active' : '');
+    updateChatUI();
+    listenChat();
+  };
+
+  function updateChatUI() {
+    let canSend = true;
+    if (activeChat === 'announcements' && currentUser.role === 'student') {
+      canSend = false;
+    }
+    document.getElementById('chatInputDiv').style.display = canSend ? 'flex' : 'none';
+    document.getElementById('readonlyNote').style.display = canSend ? 'none' : 'block';
+  }
+
+  window.sendMsg = function() {
+    let txt = document.getElementById('msgInput').value.trim();
+    if(!txt) return;
+
+    push(ref(db, 'chats/' + activeChat), {
+      sender: currentUser.name,
+      role: currentUser.role,
+      subject: currentUser.subject || '',
+      text: txt,
+      time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})
+    }).then(() => {
+      document.getElementById('msgInput').value = '';
+    });
+  };
+
+  function listenChat() {
+    onValue(ref(db, 'chats/' + activeChat), (snapshot) => {
+      let data = snapshot.val();
+      let chatDiv = document.getElementById('chatMessages');
+      if(!data) {
+        chatDiv.innerHTML = '<p style="color:#888;text-align:center;margin:auto">لا توجد رسائل بعد</p>';
+        return;
+      }
+      let html = '';
+      for(let key in data) {
+        let msg = data[key];
+        let roleTag = msg.role === 'admin' ? '[ادمن]' : msg.role === 'teacher' ? `[مدرس - ${msg.subject}]` : '[طالب]';
+        let isEveryone = msg.text.includes('@everyone');
+
+        html += `<div class="msg-bubble" style="${isEveryone ? 'border:2px solid #ff4d4d;background:#fff5f5;' : ''}">
+          <div class="msg-meta"><b>${msg.sender}</b> <span style="font-size:9px;color:#0d47a1">${roleTag}</span> • ${msg.time}</div>
+          <div class="msg-text">${msg.text}</div>
+        </div>`;
+      }
+      chatDiv.innerHTML = html;
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    });
+  }
+
+  function listenToData() {
+    onValue(ref(db, 'scheduleData'), (snapshot) => {
+      let data = snapshot.val();
+      let textDiv = document.getElementById('scheduleView');
+      let imgEl = document.getElementById('scheduleImgView');
+
+      if (!data) { textDiv.innerText = 'لم يتم إضافة الجدول بعد'; imgEl.style.display = 'none'; return; }
+      textDiv.innerText = data.text || '';
+      textDiv.style.display = data.text ? 'block' : 'none';
+      if (data.image) { imgEl.src = data.image; imgEl.style.display = 'block'; } else { imgEl.style.display = 'none'; }
+      if(currentUser.role === 'admin' || currentUser.role === 'teacher') {
+        document.getElementById('scheduleInput').value = data.text || '';
+      }
+    });
+
+    onValue(ref(db, 'homeworks'), (snapshot) => {
+      let data = snapshot.val();
+      let hwListDiv = document.getElementById('hwList');
+      if(!data) { hwListDiv.innerHTML = '<p style="color:#888">لا توجد واجبات حالياً</p>'; return; }
+      let html = '';
+      for(let key in data) {
+        let item = data[key];
+        let canDelete = currentUser.role === 'teacher' || currentUser.role === 'admin';
+        html += `<div class="item">
+          <span>• ${item.text} <small style="color:#888">(${item.by} - ${item.sub})</small></span>
+          ${canDelete ? `<button class="del-btn" onclick="deleteHW('${key}')">حذف</button>` : ''}
+        </div>`;
+      }
+      hwListDiv.innerHTML = html;
+    });
+
+    onValue(ref(db, 'topStudents'), (snapshot) => {
+      let data = snapshot.val();
+      let topListDiv = document.getElementById('topList');
+      if(!data) { topListDiv.innerHTML = '<p style="color:#888">لا توجد أسماء حالياً</p>'; return; }
+      let html = '';
+      for(let key in data) {
+        let item = data[key];
+        let canDelete = currentUser.role === 'teacher' || currentUser.role === 'admin';
+        html += `<div class="item">
+          <span>⭐ ${item.name}</span>
+          ${canDelete ? `<button class="del-btn" onclick="deleteTop('${key}')">حذف</button>` : ''}
+        </div>`;
+      }
+      topListDiv.innerHTML = html;
+    });
+
+    listenChat();
+  }
+
+  let u = localStorage.getItem('tersa_final_user');
+  if(u) {
+    currentUser = JSON.parse(u);
+    showApp();
+  }
+</script>
+</body>
+</html>
